@@ -13,6 +13,7 @@ spring:
     gateway:
       default-filters:
         - SaveSession
+        - TokenRelay
         - name: RequestRateLimiter
           args:
             redis-rate-limiter:
@@ -38,6 +39,10 @@ spring:
           max-idle-time: 15s
           max-life-time: 60s
       routes:
+        - id: spa-route
+          uri: ${SPA_URL:http://host.docker.internal:9004}
+          predicates:
+            - Path=/,/*.css,/*.js,/favicon.ico
         - id: catalog-route
           uri: ${CATALOG_SERVICE_URL:http://host.docker.internal:9001}/books
           predicates:
@@ -78,6 +83,19 @@ spring:
     timeout: 10m
     redis:
       namespace: polar:edge
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: edge-service
+            client-secret: polar-keycloak-secret
+            scope: openid,roles
+        provider:
+          keycloak:
+            issuer-uri: http://host.docker.internal:8080/realms/PolarBookshop
+            user-name-attribute: preferred_username
+
 resilience4j:
   circuitbreaker:
     configs:
